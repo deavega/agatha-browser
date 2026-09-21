@@ -1,0 +1,36 @@
+<brls:AppletFrame
+        headerHidden="true"
+        footerHidden="false">
+    <brls:Box
+            width="100%"
+            height="100%"
+            axis="column"
+            justifyContent="center"
+            alignItems="center"
+            backgroundColor="#0F0E1B">
+
+        <!-- Header: logo + name -->
+        <brls:Box axis="row" alignItems="center" marginBottom="40">
+            <brls:Image
+                    width="92"
+                    height="92"
+                    marginRight="20"
+                    image="@res/img/agatha_icon.png" />
+            <brls:Box axis="column">
+                <RubikLabel text="Agatha Browser" fontSize="46" textColor="#FFFFFF" />
+                <RubikLabel text="News, web &amp; YouTube on Switch" fontSize="18" textColor="#9692AA" marginLeft="2" />
+            </brls:Box>
+        </brls:Box>
+
+        <!-- Bookmark cards and actions are added in AgathaActivity -->
+        <brls:Box id="agatha/cards" axis="row" />
+        <brls:Box id="agatha/actions" axis="row" marginTop="28" />
+
+        <RubikLabel id="agatha/status" text=" " fontSize="18" textColor="#FFC46E" marginTop="28" />
+        <RubikLabel
+                text="YouTube playback powered by Switch-NewPipe by mirusu400 (github.com/mirusu400/switch-newpipe). Not affiliated with YouTube or Google."
+                fontSize="15"
+                textColor="#7D7994"
+                marginTop="10" />
+    </brls:Box>
+</brls:AppletFrame>

@@ -1,0 +1,64 @@
+diff --git a/resources/xml/activity/main.xml b/resources/xml/activity/main.xml
+index d8a4a43..2b896c1 100644
+--- a/resources/xml/activity/main.xml
++++ b/resources/xml/activity/main.xml
+@@ -13,7 +13,7 @@
+                 tabItemActiveTextColor="@theme/color/newpipe"
+                 defaultTab="0"
+                 sidebarPosition="left"
+-                sidebarWidth="160">
++                sidebarWidth="200">
+ 
+             <Tab
+                     label="@i18n/app/home"
+diff --git a/src/main.cpp b/src/main.cpp
+index e3039be..d1dbf9e 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -112,12 +112,34 @@ bool run_borealis_ui() {
+ 
+ }  // namespace
+ 
++#if defined(__SWITCH__)
++// Agatha Browser integration: when launched with --return-to=<nro path>, ask the
++// homebrew loader to start that NRO again when NewPipe exits (any exit path).
++static void setup_return_target(int argc, char* argv[]) {
++    const std::string flag = "--return-to=";
++    for (int i = 1; i < argc; ++i) {
++        const std::string arg = argv[i] ? argv[i] : "";
++        if (arg.rfind(flag, 0) != 0) continue;
++        const std::string path = arg.substr(flag.size());
++        if (!path.empty() && envHasNextLoad()) {
++            const std::string args = "\"" + path + "\"";
++            if (R_SUCCEEDED(envSetNextLoad(path.c_str(), args.c_str())))
++                newpipe::logf("main: will return to %s", path.c_str());
++        }
++        return;
++    }
++}
++#endif
++
+ int main(int argc, char* argv[]) {
+     (void) argc;
+     (void) argv;
+ 
+     newpipe::init_log();
+     newpipe::log_line("main: start");
++#if defined(__SWITCH__)
++    setup_return_target(argc, argv);
++#endif
+     try {
+         std::string auth_error;
+         if (!newpipe::AuthStore::instance().load(&auth_error) && !auth_error.empty()) {
+diff --git a/src/view/auto_tab_frame.cpp b/src/view/auto_tab_frame.cpp
+index 71f4f50..a4f256c 100644
+--- a/src/view/auto_tab_frame.cpp
++++ b/src/view/auto_tab_frame.cpp
+@@ -589,6 +589,7 @@ const std::string autoSidebarItemXML = R"xml(
+                 height="auto"
+                 fontSize="22"
+                 marginBottom="5"
++                singleLine="true"
+                 horizontalAlign="center"/>
+ 
+             <brls:Label

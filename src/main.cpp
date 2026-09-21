@@ -7,7 +7,9 @@
 #include <exception>
 #include <string>
 
+#include "activity/agatha_activity.hpp"
 #include "activity/main_activity.hpp"
+#include "agatha/agatha.hpp"
 #include "newpipe/auth_store.hpp"
 #include "newpipe/image_loader.hpp"
 #include "newpipe/i18n.hpp"
@@ -23,6 +25,7 @@
 #include "tab/subscriptions_tab.hpp"
 #include "tab/library_tab.hpp"
 #include "view/auto_tab_frame.hpp"
+#include "view/rubik_label.hpp"
 #include "view/svg_image.hpp"
 
 namespace {
@@ -44,17 +47,36 @@ void configure_theme() {
     brls::Theme::getLightTheme().addColor("color/grey_2", nvgRGB(235, 236, 238));
     brls::Theme::getLightTheme().addColor("color/grey_3", nvgRGBA(200, 200, 200, 16));
 
+    // Agatha Browser: purple focus highlight everywhere
+    brls::Theme::getDarkTheme().addColor("brls/highlight/color1", nvgRGB(124, 92, 255));
+    brls::Theme::getDarkTheme().addColor("brls/highlight/color2", nvgRGB(176, 156, 255));
+
     brls::getStyle().addMetric("brls/tab_frame/sidebar_width", 160);
 }
 
 void register_views() {
     brls::Application::registerXMLView("AutoTabFrame", AutoTabFrame::create);
     brls::Application::registerXMLView("SVGImage", SVGImage::create);
+    brls::Application::registerXMLView("RubikLabel", RubikLabel::create);
     brls::Application::registerXMLView("HomeTab", HomeTab::create);
     brls::Application::registerXMLView("SearchTab", SearchTab::create);
     brls::Application::registerXMLView("SubscriptionsTab", SubscriptionsTab::create);
     brls::Application::registerXMLView("LibraryTab", LibraryTab::create);
     brls::Application::registerXMLView("SettingsTab", SettingsTab::create);
+}
+
+void load_rubik_font() {
+#ifdef USE_LIBROMFS
+    auto& font = romfs::get("font/Rubik-Regular.ttf");
+    if (font.valid() && brls::Application::loadFontFromMemory("rubik", (void*) font.data(), font.size(), false)) {
+        return;
+    }
+#else
+    if (brls::Application::loadFontFromFile("rubik", std::string(BRLS_RESOURCES) + "font/Rubik-Regular.ttf")) {
+        return;
+    }
+#endif
+    newpipe::log_line("main: Rubik font not loaded, using default font");
 }
 
 bool run_borealis_ui() {
@@ -78,8 +100,18 @@ bool run_borealis_ui() {
     newpipe::ImageLoader::instance().start();
     image_loader_started = true;
 
-    newpipe::log_line("main: push MainActivity");
-    brls::Application::pushActivity(new MainActivity());
+    load_rubik_font();
+
+    // Agatha home is always the bottom screen. After NewPipe's player closes (the UI is
+    // restarted for playback), put the user back where they came from.
+    newpipe::log_line("main: push AgathaActivity");
+    brls::Application::pushActivity(new AgathaActivity(), brls::TransitionAnimation::NONE);
+    if (agatha::youtube_entry() == agatha::YouTubeEntry::Browse) {
+        newpipe::log_line("main: resume MainActivity");
+        brls::Application::pushActivity(new MainActivity(), brls::TransitionAnimation::NONE);
+    } else {
+        agatha::set_youtube_entry(agatha::YouTubeEntry::None);
+    }
 
     const std::string playback_error = newpipe::take_last_playback_error();
     if (!playback_error.empty()) {
@@ -112,34 +144,13 @@ bool run_borealis_ui() {
 
 }  // namespace
 
-#if defined(__SWITCH__)
-// Agatha Browser integration: when launched with --return-to=<nro path>, ask the
-// homebrew loader to start that NRO again when NewPipe exits (any exit path).
-static void setup_return_target(int argc, char* argv[]) {
-    const std::string flag = "--return-to=";
-    for (int i = 1; i < argc; ++i) {
-        const std::string arg = argv[i] ? argv[i] : "";
-        if (arg.rfind(flag, 0) != 0) continue;
-        const std::string path = arg.substr(flag.size());
-        if (!path.empty() && envHasNextLoad()) {
-            const std::string args = "\"" + path + "\"";
-            if (R_SUCCEEDED(envSetNextLoad(path.c_str(), args.c_str())))
-                newpipe::logf("main: will return to %s", path.c_str());
-        }
-        return;
-    }
-}
-#endif
-
 int main(int argc, char* argv[]) {
     (void) argc;
     (void) argv;
 
     newpipe::init_log();
     newpipe::log_line("main: start");
-#if defined(__SWITCH__)
-    setup_return_target(argc, argv);
-#endif
+    agatha::enable_capture();
     try {
         std::string auth_error;
         if (!newpipe::AuthStore::instance().load(&auth_error) && !auth_error.empty()) {

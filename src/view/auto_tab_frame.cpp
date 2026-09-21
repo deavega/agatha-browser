@@ -61,7 +61,14 @@ AutoTabFrame::AutoTabFrame() {
 
     // this only works with "sidebarPosition == left"
     // and It must be set before you set the sidebarPosition
-    this->registerFloatXMLAttribute("sidebarWidth", [this](float value) { this->sidebarWidth = value; });
+    // Also applied immediately: XML attributes are processed in document order, and main.xml
+    // lists sidebarPosition before sidebarWidth, so the width was previously never used
+    // (the sidebar stayed at the 100px default and labels were cut off).
+    this->registerFloatXMLAttribute("sidebarWidth", [this](float value) {
+        this->sidebarWidth = value;
+        if (this->tabBarPosition == AutoTabBarPosition::LEFT || this->tabBarPosition == AutoTabBarPosition::RIGHT)
+            this->sidebar->setWidth(value);
+    });
 
     this->registerFloatXMLAttribute("tabFontSize", [this](float value) { this->setFontSize(value); });
 

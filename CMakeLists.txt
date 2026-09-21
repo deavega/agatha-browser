@@ -17,7 +17,7 @@ project(switch_newpipe
     LANGUAGES C CXX
 )
 
-set(PROJECT_AUTHOR "switch-newpipe")
+set(PROJECT_AUTHOR "Vega (NewPipe: mirusu400)")
 set(PROJECT_ICON ${CMAKE_CURRENT_SOURCE_DIR}/resources/icon/icon.jpg)
 set(PROJECT_RESOURCES ${CMAKE_CURRENT_SOURCE_DIR}/resources)
 
@@ -109,11 +109,12 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 if (PLATFORM_SWITCH)
     add_custom_target(${PROJECT_NAME}.nro
         DEPENDS ${PROJECT_NAME}
-        COMMAND ${NX_NACPTOOL_EXE} --create "Switch-NewPipe" "${PROJECT_AUTHOR}" "${PROJECT_VERSION}" ${PROJECT_NAME}.nacp
+        COMMAND ${NX_NACPTOOL_EXE} --create "Agatha Browser" "${PROJECT_AUTHOR}" "${PROJECT_VERSION}" ${PROJECT_NAME}.nacp
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_RESOURCES} ${CMAKE_BINARY_DIR}/resources
         COMMAND ${NX_ELF2NRO_EXE} ${PROJECT_NAME}.elf ${PROJECT_NAME}.nro
             --icon=${PROJECT_ICON}
             --nacp=${PROJECT_NAME}.nacp --romfsdir=${CMAKE_BINARY_DIR}/resources
+        COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_NAME}.nro AgathaBrowser.nro
         ALL
     )
 endif()
