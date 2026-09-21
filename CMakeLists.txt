@@ -17,7 +17,7 @@ project(switch_newpipe
     LANGUAGES C CXX
 )
 
-set(PROJECT_AUTHOR "Vega (NewPipe: mirusu400)")
+set(PROJECT_AUTHOR "Vega - NewPipe by mirusu400")
 set(PROJECT_ICON ${CMAKE_CURRENT_SOURCE_DIR}/resources/icon/icon.jpg)
 set(PROJECT_RESOURCES ${CMAKE_CURRENT_SOURCE_DIR}/resources)
 
@@ -115,6 +115,7 @@ if (PLATFORM_SWITCH)
             --icon=${PROJECT_ICON}
             --nacp=${PROJECT_NAME}.nacp --romfsdir=${CMAKE_BINARY_DIR}/resources
         COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_NAME}.nro AgathaBrowser.nro
+	VERBATIM
         ALL
     )
 endif()
