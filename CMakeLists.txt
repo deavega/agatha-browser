@@ -107,7 +107,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 )
 
 if (PLATFORM_SWITCH)
-    add_custom_target(${PROJECT_NAME}.nro
+    add_custom_target(${PROJECT_NAME}.nro ALL
         DEPENDS ${PROJECT_NAME}
         COMMAND ${NX_NACPTOOL_EXE} --create "Agatha Browser" "${PROJECT_AUTHOR}" "${PROJECT_VERSION}" ${PROJECT_NAME}.nacp
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_RESOURCES} ${CMAKE_BINARY_DIR}/resources
@@ -115,7 +115,6 @@ if (PLATFORM_SWITCH)
             --icon=${PROJECT_ICON}
             --nacp=${PROJECT_NAME}.nacp --romfsdir=${CMAKE_BINARY_DIR}/resources
         COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_NAME}.nro AgathaBrowser.nro
-	VERBATIM
-        ALL
+        VERBATIM
     )
 endif()
