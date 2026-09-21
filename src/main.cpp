@@ -112,12 +112,34 @@ bool run_borealis_ui() {
 
 }  // namespace
 
+#if defined(__SWITCH__)
+// Agatha Browser integration: when launched with --return-to=<nro path>, ask the
+// homebrew loader to start that NRO again when NewPipe exits (any exit path).
+static void setup_return_target(int argc, char* argv[]) {
+    const std::string flag = "--return-to=";
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i] ? argv[i] : "";
+        if (arg.rfind(flag, 0) != 0) continue;
+        const std::string path = arg.substr(flag.size());
+        if (!path.empty() && envHasNextLoad()) {
+            const std::string args = "\"" + path + "\"";
+            if (R_SUCCEEDED(envSetNextLoad(path.c_str(), args.c_str())))
+                newpipe::logf("main: will return to %s", path.c_str());
+        }
+        return;
+    }
+}
+#endif
+
 int main(int argc, char* argv[]) {
     (void) argc;
     (void) argv;
 
     newpipe::init_log();
     newpipe::log_line("main: start");
+#if defined(__SWITCH__)
+    setup_return_target(argc, argv);
+#endif
     try {
         std::string auth_error;
         if (!newpipe::AuthStore::instance().load(&auth_error) && !auth_error.empty()) {
