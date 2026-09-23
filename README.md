@@ -1,146 +1,85 @@
-<p align="center">
-  <img src="./docs/banner.png" alt="Switch-NewPipe" width="848"/>
-</p>
+# Agatha Browser
 
-<p align="center">
-  <strong>A free, open-source YouTube client for Nintendo Switch homebrew.</strong><br>
-  Inspired by <a href="https://github.com/TeamNewPipe/NewPipe">NewPipe</a> &mdash; no Google account required, no ads, no tracking.
-</p>
+A homebrew browser and YouTube client for the Nintendo Switch, in a single NRO.
 
-<p align="center">
-  <a href="./README_kr.md">한국어</a>
-</p>
+Agatha Browser opens news sites and the wider web through the console's own browser,
+and plays YouTube through a built-in client, so you never leave the app. It is built on
+[Switch-NewPipe](https://github.com/mirusu400/switch-newpipe) by mirusu400, which
+provides everything YouTube-related. See [CREDITS.md](CREDITS.md).
 
----
+## Features
 
-## Screenshots
-
-| Home Feed | Player (720p) |
-|:-:|:-:|
-| ![home](./docs/preview2.jpg) | ![player](./docs/preview1.jpg) |
+- **Bookmark cards** on the home screen. Five slots, each editable on the console with
+  the system keyboard, saved to the SD card.
+- **Any URL**, typed in with the system keyboard.
+- **YouTube built in**: search, subscriptions, library and playback, with no ads and no
+  Google account required.
+- **YouTube links just work.** Tap a video link inside an article and that video opens
+  in the player, because the system browser cannot run YouTube's site.
+- **Screenshots and video capture** are enabled (see Limitations).
 
 ## Install
 
-1. Make sure your Switch has **Atmosphere CFW** with the Homebrew Menu
-2. Download `switch_newpipe.nro` from the [latest release](../../releases/latest)
-3. Copy it to `sdmc:/switch/switch_newpipe.nro`
-4. Launch from the Homebrew Menu
+1. Download `AgathaBrowser.nro` from the
+   [Releases](../../releases) page, or from the Actions tab if you build it yourself.
+2. Copy it to `sdmc:/switch/AgathaBrowser/AgathaBrowser.nro`.
+3. On the console, hold **R** while launching any game to open the Homebrew Menu, then
+   start Agatha Browser.
 
-## What You Can Do
-
-- Browse **Home**, **Search**, **Subscriptions**, **Library**, and **Settings**
-- Watch YouTube up to **1080p** in docked mode (**720p** handheld) — HLS streaming, no throttle
-- Search for any video and play it immediately
-- Log in with cookies to see your subscriptions and personalized recommendations
-- Save watch history and favorites locally
-- English & Korean UI
+Launching through a game (title override) matters: the system browser and screen
+capture are only available to homebrew running in application mode.
 
 ## Controls
 
-### Main UI
-
 | Button | Action |
-|--------|--------|
-| `A` | Play video from list |
-| `Y` | Open video details |
-| `X` | Refresh / Reset defaults |
-| `RB` | Manage login session (Subscriptions tab) |
+| --- | --- |
+| D-Pad / Left Stick | Move between cards and buttons |
+| A | Open the selected bookmark or button |
+| X | Edit the selected bookmark (name, then URL) |
+| − (Minus) | Reset the selected bookmark to its default |
+| B | Back; from the home screen, quit |
+| Touch | Tap a card or button directly |
 
-### Player
+Bookmarks are stored at `sdmc:/config/AgathaBrowser/bookmarks.txt`, one `name|url` per
+line, so you can also edit them from a computer.
 
-| Button | Action |
-|--------|--------|
-| `A` | Pause / Resume |
-| `B` | Exit player |
-| `Up / Down` | Volume |
-| `Left / Right` | Seek 10 seconds |
-| `LB / RB` | Seek 60 seconds |
-| `X / Y` | Toggle OSD overlay |
+## Build
 
-On progressive and UMP streams you can only seek inside the part that has already
-been downloaded; the OSD progress bar shows that range and the reachable limit.
-
-## Login (Optional)
-
-Switch-NewPipe uses cookie import for YouTube login. No OAuth or Google sign-in required.
-
-**How to set up:**
-
-1. Export your YouTube cookies from a browser (using a cookie export extension)
-2. Save the file as `sdmc:/switch/switch_newpipe_auth.txt`
-3. Restart the app
-
-Supported formats: raw `Cookie` header, JSON `{"cookie_header":"..."}`, or Netscape `cookies.txt`.
-
-Once logged in, your **Subscriptions** tab and **personalized Home recommendations** will be available.
-
-## Playback Quality
-
-Configure in **Settings** tab:
-
-| Mode | Description |
-|------|-------------|
-| **Best** | Auto by console state: **1080p when docked**, **720p in handheld** |
-| **1080p** | Always target 1080p (HLS), falls back gracefully |
-| **720p** | Always target 720p (HLS), falls back gracefully |
-| **320p** | Low quality (~360p progressive MP4) to save bandwidth |
-
-## Data Files
-
-All data is stored on your SD card:
-
-| File | Purpose |
-|------|---------|
-| `sdmc:/switch/switch_newpipe.log` | Debug log |
-| `sdmc:/switch/switch_newpipe_settings.json` | Settings |
-| `sdmc:/switch/switch_newpipe_library.json` | Watch history & favorites |
-| `sdmc:/switch/switch_newpipe_session.json` | Login session |
-| `sdmc:/switch/switch_newpipe_auth.txt` | Cookie import (you provide this) |
-
-## Build from Source
-
-Requires Docker and a host C++ compiler.
+The build runs in Docker and produces the NRO. Nothing needs to be installed on the host
+besides Docker and the devkitPro container the script pulls.
 
 ```bash
-# Full build (portlibs + app)
+git clone --recursive https://github.com/deavega/agatha-browser.git
+cd agatha-browser
 ./build.sh
-
-# App only (after first full build)
-./build.sh --app-only
-
-# Clean everything
-./build.sh --clean
 ```
 
-Output: `cmake-build-switch/switch_newpipe.nro`
+The result is `cmake-build-switch/AgathaBrowser.nro`.
 
-<details>
-<summary>Host validation tools (for development)</summary>
+On macOS, build the resource helper inside the container first, because `build.sh`
+otherwise builds a macOS binary that cannot run in the Linux container, and it also
+calls `nproc`, which macOS does not have:
 
 ```bash
-make host
-./build/host/switch_newpipe_host
-./build/host/switch_newpipe_host --search Zelda
-./build/host/switch_newpipe_host --resolve 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+docker run --rm -v "$PWD:/work" -w /work devkitpro/devkita64 bash -lc '
+  cmake -S vendor/borealis/library/lib/extern/libromfs/generator -B .build-libromfs-generator
+  cmake --build .build-libromfs-generator -j4
+  cp .build-libromfs-generator/libromfs-generator vendor/borealis/libromfs-generator'
 ```
 
-</details>
+You can also build it on GitHub: open the Actions tab and run **Agatha Browser Build**,
+then download the `agatha-browser` artifact.
 
-## Known Limitations
+## Limitations
 
-- Seek is not yet supported
-- No in-app quality picker during playback
-- No in-app Google OAuth (cookie import only)
-- Channel pages are not fully browsable yet
-- Comments and playlists load first page only
-
-## Tech Stack
-
-- **UI**: [Borealis](https://github.com/natinusala/borealis) (native Switch UI framework)
-- **Playback**: mpv + FFmpeg (hardware-accelerated on Switch)
-- **Networking**: libcurl + custom YouTube innertube API client
-- **Build**: CMake, Docker, devkitPro toolchain
+- The console's browser uses an old engine. Most news sites render fine; heavy web apps
+  may not.
+- Video capture also depends on the game you launch through supporting it.
+- Capture may be blocked while the system browser is open. That is the browser's own
+  behaviour, not Agatha's.
 
 ## License
 
-This project is for educational purposes. It is not affiliated with YouTube, Google, or NewPipe.
+GPL-3.0, inherited from Switch-NewPipe. See [LICENSE.MD](LICENSE.MD).
+
+Not affiliated with Nintendo, YouTube or Google.
